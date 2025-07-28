@@ -1,0 +1,31 @@
+server:
+  port: 8088
+
+logging:
+  level:
+    org:
+      springframework: debug
+spring:
+  application:
+    name: SpringAIDemo
+  ai:
+    ollama:
+      base-url: http://10.160.4.68:11434
+      chat:
+          model: qwen3:8b
+          temperature: 0.7
+      embedding:
+        model: nomic-embed-text
+    vectorstore:
+      milvus:
+        client:
+          host: 172.21.160.1
+          port: 19530
+          username: root
+          password: milvus
+        databaseName: default
+        collectionName: vector_store
+        embeddingDimension: 768
+        indexType: IVF_FLAT
+        metricType: COSINE
+        initialize-schema: true
