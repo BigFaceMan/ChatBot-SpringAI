@@ -48,16 +48,17 @@ public class ChatController {
      * 普通调用，返回一次性回复
      */
     @GetMapping("/basicTools")
-    public Map<String, String> baseQueryTools(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
+    public String baseQueryTools(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
         log.info("chat get msg {}", message);
         ChatClientResponse response = chatClient
                 .prompt()
                 .user(message)
+                .tools(new DateTimeTools())
                 .call().chatClientResponse();
         log.info("Chat response: {}", response);
         String result = response.chatResponse().getResult().getOutput().getText();
         log.info("Generated text: {}", result);
-        return Map.of("generation", result);
+        return result;
     }
 
     /**
@@ -96,7 +97,4 @@ public class ChatController {
                 })
                 .doOnNext(text -> log.info("Generated text: {}", text));
     }
-
-
-
 }

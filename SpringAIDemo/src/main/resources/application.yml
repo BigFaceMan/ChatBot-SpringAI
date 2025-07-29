@@ -8,6 +8,10 @@ logging:
 spring:
   application:
     name: SpringAIDemo
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   ai:
     ollama:
       base-url: http://10.160.4.68:11434

@@ -1,5 +1,6 @@
 package com.example.SpringAIDemo.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/rag")
+@Slf4j
 public class RagController {
     private final ChatClient.Builder chatClientBuilder;
     private final ChatClient chatClient;
@@ -36,12 +38,13 @@ public class RagController {
         // 1. 构建查询对象
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(userInput)
-                .similarityThreshold(0.7)
-                .topK(3)
+                .similarityThreshold(0.2)
+                .topK(5)
                 .build();
         // 2. 搜索相似文档
         List<Document> documents = vectorStore.similaritySearch(searchRequest);
         String documentContext = documents.stream().map(Document::getText).collect(Collectors.joining(System.lineSeparator()));
+        log.info("vector store 查询结果：{}", documentContext);
 
         // 3. 构建用户输入
         userInput = "参考信息：" +

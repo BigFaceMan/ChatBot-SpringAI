@@ -55,14 +55,10 @@ public class VectorController {
     }
 
     @RequestMapping("/search")
-    public String search(String query, Integer metaId) {
-        FilterExpressionBuilder b = new FilterExpressionBuilder();
-        Filter.Expression filterExpression = b.gte("meta1", metaId).build();
-
+    public String search(String query) {
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(query)
-                .similarityThreshold(0.7)
-                .filterExpression(filterExpression)
+//                .similarityThreshold(0.7)
                 .topK(5)
                 .build();
         List<Document> documents = vectorStore.similaritySearch(searchRequest);
