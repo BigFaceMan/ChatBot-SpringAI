@@ -109,7 +109,8 @@ const sendMessage = async () => {
   })
 
   if (requestType.value === 'stream') {
-    eventSource = new EventSource(`/chat/ollama/stream?message=${encodeURIComponent(message)}`)
+    const token = localStorage.getItem('token')
+    eventSource = new EventSource(`/chat/ollama/stream?message=${encodeURIComponent(message)}&token=${encodeURIComponent(token)}`)
 
     eventSource.onmessage = (event) => {
       if (event.data) {

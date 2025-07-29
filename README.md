@@ -23,6 +23,6 @@ api用的deepseek
     - [x] L使用vector_store，加载进向量数据库（调vector_store会调用api 做embeddingjj:w
 
 - [x] Tool Calling
-  - [x] 注解来声明Tools的描述，ChatClient发送消息的时候配置.Tools即可，
-
+  - [x] 注解来声明Tools的描述，ChatClient发送消息的时候配置.Tools即可
+- [ ] 加入会话memory
 

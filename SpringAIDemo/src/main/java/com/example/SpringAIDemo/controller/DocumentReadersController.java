@@ -60,7 +60,6 @@ public class DocumentReadersController {
 
         try {
             String filePath = "file:" + savedFile.toAbsolutePath();
-
 //            ParagraphPdfDocumentReader pdfReader = new ParagraphPdfDocumentReader(filePath,
 //                    PdfDocumentReaderConfig.builder()
 //                            .withPageTopMargin(0)
