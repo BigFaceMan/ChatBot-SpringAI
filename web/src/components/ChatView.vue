@@ -1,83 +1,157 @@
 <template>
-  <div class="container d-flex flex-column vh-100">
-    <div
-      ref="chatContainer"
-      class="flex-grow-1 overflow-auto border rounded p-3 mb-3 bg-white"
-    >
+  <div class="d-flex vh-100 overflow-hidden">
+    <!-- 左侧固定侧边栏 -->
+    <aside class="bg-dark text-white d-flex flex-column p-3" style="width: 260px; flex-shrink: 0;">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0">会话列表</h5>
+        <button class="btn btn-sm btn-outline-light" @click="showCreateModal = true">+</button>
+      </div>
+
+      <ul class="list-group list-group-flush">
+        <li
+          v-for="conv in conversations"
+          :key="conv.id"
+          class="list-group-item list-group-item-action bg-dark text-white border-0 rounded mb-1"
+          :class="{ 'active bg-info text-white': conv.id === selectedConversationId }"
+          @click="loadConversation(conv.id)"
+          style="cursor: pointer;"
+        >
+          {{ conv.title }}
+        </li>
+      </ul>
+    </aside>
+
+    <!-- 右侧聊天区域 -->
+    <div class="flex-grow-1 d-flex flex-column p-4 bg-light">
+      <!-- 聊天内容区域 -->
       <div
-        v-for="(msg, idx) in chatHistory"
-        :key="idx"
-        :class="['d-flex mb-3', msg.role === 'user' ? 'justify-content-end' : 'justify-content-start']"
+        ref="chatContainer"
+        class="flex-grow-1 overflow-auto mb-3 rounded border bg-white p-3 shadow-sm"
       >
         <div
-          class="p-2 rounded"
-          :class="msg.role === 'user' ? 'bg-primary text-white' : 'bg-secondary text-white'"
-          style="max-width: 70%; white-space: pre-wrap;"
-          v-html="renderMarkdown(msg.content)"
-        ></div>
+          v-for="(msg, idx) in chatHistory"
+          :key="idx"
+          class="mb-3 d-flex"
+          :class="msg.type === 'USER' ? 'justify-content-end' : 'justify-content-start'"
+        >
+          <div
+            class="p-3 rounded"
+            :class="msg.type === 'USER' ? 'bg-primary text-white' : 'bg-secondary text-white'"
+            style="max-width: 75%; white-space: pre-wrap;"
+            v-html="renderMarkdown(msg.content)"
+          ></div>
+        </div>
       </div>
+
+      <!-- 输入栏 -->
+      <div class="input-group">
+        <textarea
+          v-model="inputText"
+          rows="2"
+          class="form-control"
+          placeholder="输入消息，回车发送"
+          @keydown.enter.prevent="sendMessage"
+        ></textarea>
+        <button class="btn btn-primary" @click="sendMessage">发送</button>
+      </div>
+
+      <!-- 当前会话提示 -->
+      <div class="mt-2 small text-muted">当前会话：{{ selectedConversationId || '无' }}</div>
     </div>
 
-    <textarea
-      v-model="inputText"
-      rows="2"
-      class="form-control mb-2"
-      placeholder="输入消息，回车发送"
-      @keydown.enter.prevent="sendMessage"
-    ></textarea>
-
-    <div class="d-flex justify-content-end align-items-center gap-2">
-      <div class="dropdown">
-        <button
-          class="btn btn-outline-secondary dropdown-toggle"
-          type="button"
-          id="requestTypeBtn"
-          @click="toggleMenu"
-        >
-          模式：{{ requestType }}
-        </button>
-        <ul
-          v-if="showRequestTypeMenu"
-          class="dropdown-menu show"
-          aria-labelledby="requestTypeBtn"
-          id="requestTypeMenu"
-        >
-          <li
-            v-for="type in ['stream', 'tools', 'rag']"
-            :key="type"
-            @click="selectRequestType(type)"
-            class="dropdown-item"
-            :class="{ active: requestType === type }"
-            style="cursor: pointer;"
-          >
-            {{ type }}
-          </li>
-        </ul>
+    <!-- 新建会话 Modal -->
+    <div v-if="showCreateModal" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+          <div class="modal-header">
+            <h5 class="modal-title">新建会话</h5>
+            <button type="button" class="btn-close" @click="showCreateModal = false"></button>
+          </div>
+          <div class="modal-body">
+            <input
+              type="text"
+              class="form-control"
+              v-model="newConversationTitle"
+              placeholder="请输入会话标题"
+            />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="showCreateModal = false">取消</button>
+            <button class="btn btn-primary" @click="createNewConversation">创建</button>
+          </div>
+        </div>
       </div>
-
-      <button class="btn btn-primary" @click="sendMessage">发送</button>
     </div>
   </div>
 </template>
 
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount, nextTick } from 'vue'
-import axios from 'axios' 
-import { renderMarkdown } from "../utils/markdown"
+import { ref, onMounted, nextTick, onBeforeUnmount } from 'vue'
+import axios from 'axios'
+import { renderMarkdown } from '../utils/markdown'
 
-interface Message {
-  role: 'user' | 'assistant'
-  content: string
+interface Conversation {
+  id: string
+  title: string
+  userId: number
+  createdAt: any
 }
 
+interface Message {
+  conversationId: string
+  content: string
+  type: 'USER' | 'ASSISTANT'
+  timestamp: number
+}
+
+const conversations = ref<Conversation[]>([])
+const selectedConversationId = ref<string | null>(null)
 const chatHistory = ref<Message[]>([])
 const inputText = ref('')
 const chatContainer = ref<HTMLDivElement | null>(null)
-
-const requestType = ref<'stream' | 'tools' | 'rag'>('stream')
-
 let eventSource: EventSource | null = null
+
+const token = localStorage.getItem('token') || ''
+
+const loadConversations = async () => {
+  const res = await axios.get('/user/conversations/list', {
+    headers: { Authorization: token }
+  })
+  conversations.value = res.data.data || []
+}
+
+const createNewConversation = async () => {
+  const title = newConversationTitle.value.trim() || '新的会话'
+  try {
+    const res = await axios.post(
+      `/user/conversations/create`,
+      { title }, // 请求体 data
+      {
+        headers: { Authorization: token }
+      }
+    )
+    const conv = res.data.data
+    conversations.value.unshift(conv)
+    loadConversation(conv.id)
+  } catch (e) {
+    console.error('创建会话失败', e)
+  } finally {
+    showCreateModal.value = false
+    newConversationTitle.value = ''
+  }
+}
+
+
+const loadConversation = async (id: string) => {
+  selectedConversationId.value = id
+  const res = await axios.get(`/user/conversations/content`, {
+    params: { conversationId: id },
+    headers: { Authorization: token }
+  })
+  chatHistory.value = res.data.data || []
+  scrollToBottom()
+}
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -88,105 +162,93 @@ const scrollToBottom = () => {
 }
 
 const sendMessage = async () => {
-  if (!inputText.value.trim()) return
-
-  chatHistory.value.push({
-    role: 'user',
-    content: inputText.value
-  })
+  if (!inputText.value.trim() || !selectedConversationId.value) return
 
   const message = inputText.value
   inputText.value = ''
 
-  if (eventSource) {
-    eventSource.close()
-    eventSource = null
-  }
-
   chatHistory.value.push({
-    role: 'assistant',
-    content: ''
+    conversationId: selectedConversationId.value,
+    content: message,
+    type: 'USER',
+    timestamp: Date.now()
   })
 
-  if (requestType.value === 'stream') {
-    const token = localStorage.getItem('token')
-    eventSource = new EventSource(`/chat/ollama/stream?message=${encodeURIComponent(message)}&token=${encodeURIComponent(token)}`)
+  chatHistory.value.push({
+    conversationId: selectedConversationId.value,
+    content: '',
+    type: 'ASSISTANT',
+    timestamp: Date.now()
+  })
 
-    eventSource.onmessage = (event) => {
-      if (event.data) {
-        const lastMsg = chatHistory.value[chatHistory.value.length - 1]
-        if (lastMsg && lastMsg.role === 'assistant') {
-          lastMsg.content += event.data
-          scrollToBottom()
-        }
-      }
-    }
-
-    eventSource.onerror = () => {
-      if (eventSource) {
-        eventSource.close()
-        eventSource = null
-      }
-    }
-  } else if (requestType.value === 'tools') {
-    axios.get(`/chat/ollama/basicTools`, {
-        params: { message }
-      }).then(res => {
-        const lastMsg = chatHistory.value[chatHistory.value.length - 1]
-        if (lastMsg && lastMsg.role === 'assistant') {
-          lastMsg.content = res.data
-          scrollToBottom()
-        }
-      }).catch(err => {
-        console.error('请求错误:', err)
-      })
-  } else if (requestType.value === 'rag') {
-    try {
-      const res = await fetch(`/rag/base?userInput=${encodeURIComponent(message)}`)
-      const text = await res.text()
-      const lastMsg = chatHistory.value[chatHistory.value.length - 1]
-      if (lastMsg && lastMsg.role === 'assistant') {
-        lastMsg.content = text
-        scrollToBottom()
-      }
-    } catch (e) {
-      const lastMsg = chatHistory.value[chatHistory.value.length - 1]
-      if (lastMsg && lastMsg.role === 'assistant') {
-        lastMsg.content = "请求失败：" + (e instanceof Error ? e.message : e)
-      }
-    }
-  }
-
-  scrollToBottom()
-}
-
-const showRequestTypeMenu = ref(false)
-
-const toggleMenu = () => {
-  showRequestTypeMenu.value = !showRequestTypeMenu.value
-}
-
-const selectRequestType = (type: 'stream' | 'tools' | 'rag') => {
-  requestType.value = type
-  showRequestTypeMenu.value = false
-}
-
-// 点击页面其他地方关闭菜单
-const onClickOutside = (event: MouseEvent) => {
-  const menu = document.getElementById('requestTypeMenu')
-  const btn = document.getElementById('requestTypeBtn')
-  if (menu && btn && !menu.contains(event.target as Node) && !btn.contains(event.target as Node)) {
-    showRequestTypeMenu.value = false
-  }
-}
-
-window.addEventListener('click', onClickOutside)
-
-onBeforeUnmount(() => {
   if (eventSource) {
     eventSource.close()
+  }
+
+  eventSource = new EventSource(`/user/chat/ollama/stream?message=${encodeURIComponent(message)}&conversationId=${selectedConversationId.value}&token=${encodeURIComponent(token)}`)
+
+  eventSource.onmessage = (event) => {
+    if (event.data) {
+      const lastMsg = chatHistory.value[chatHistory.value.length - 1]
+      if (lastMsg && lastMsg.type === 'ASSISTANT') {
+        lastMsg.content += event.data
+        scrollToBottom()
+      }
+    }
+  }
+
+  eventSource.onerror = () => {
+    if (eventSource) eventSource.close()
     eventSource = null
   }
-  window.removeEventListener('click', onClickOutside)
+}
+
+const showCreateModal = ref(false)
+const newConversationTitle = ref('')
+
+
+
+onMounted(() => {
+  loadConversations()
+})
+
+onBeforeUnmount(() => {
+  if (eventSource) eventSource.close()
 })
 </script>
+
+<style scoped>
+.list-group-item {
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.list-group-item:hover {
+  background-color: #495057 !important;
+  transform: translateX(2px);
+  color: white;
+}
+
+textarea.form-control {
+  resize: none;
+}
+
+.list-group-item.active {
+  background-color: #17a2b8;
+  border-color: #17a2b8;
+  color: white;
+}
+
+.modal {
+  z-index: 1050;
+}
+
+.modal .modal-dialog {
+  margin-top: 10%;
+}
+
+.list-group-item.active {
+  background-color: #17a2b8;
+  border-color: #17a2b8;
+  color: white;
+}
+</style>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.SpringAIDemo.mapper.ChatMemoryMapper">
+
+    <insert id="insertChatMemory" parameterType="com.example.SpringAIDemo.entity.ChatMemory">
+        INSERT INTO SPRING_AI_CHAT_MEMORY (conversation_id, content, type, timestamp)
+        VALUES (#{conversationId}, #{content}, #{type}, #{timestamp})
+    </insert>
+
+    <select id="getChatMemoriesByConversationId" parameterType="String" resultType="com.example.SpringAIDemo.entity.ChatMemory">
+        SELECT conversation_id, content, type, timestamp
+        FROM SPRING_AI_CHAT_MEMORY
+        WHERE conversation_id = #{conversationId}
+        ORDER BY timestamp ASC
+    </select>
+
+    <delete id="deleteByConversationId" parameterType="String">
+        DELETE FROM SPRING_AI_CHAT_MEMORY WHERE conversation_id = #{conversationId}
+    </delete>
+
+</mapper>

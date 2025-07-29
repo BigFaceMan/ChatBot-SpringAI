@@ -21,10 +21,9 @@ import reactor.core.publisher.Flux;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/chat/ollama")
+@RequestMapping("/user/chat/ollama")
 @Slf4j
 public class ChatController {
-
     private final ChatClient chatClient;
     private final ChatMemory chatMemory;
 
@@ -74,13 +73,15 @@ public class ChatController {
      * 流式输出纯文本
      */
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<String>> streamQuery(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
+    public Flux<ServerSentEvent<String>> streamQuery(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message, @RequestParam (value = "conversationId", defaultValue = "007") String conversationId) {
         log.info("chat get msg {}", message);
 
         return chatClient
                 .prompt()
                 .user(message)
-                .tools(new DateTimeTools())
+                .advisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+                // 通过监听器传入会话ID参数，这里我们传固定值007
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .stream()
                 .chatResponse()
                 .map(response -> {

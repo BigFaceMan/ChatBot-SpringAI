@@ -47,7 +47,7 @@ spring:
 jwt:
   user-secret-key: u1kP3vZ7jH9Df+2QZqfy1zSBl3F4W8NtV5HrOXLeElU=
   user-ttl: 7200000
-  user-token-name: token
+  user-token-name: Authorization
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml

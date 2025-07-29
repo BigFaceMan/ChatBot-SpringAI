@@ -1,27 +1,7 @@
 <template>
-  <div id="app" class="d-flex vh-100">
-    <!-- 左侧导航栏 -->
-    <aside class="bg-dark text-white" style="width: 200px;">
-      <ul class="nav flex-column py-3">
-        <li class="nav-item">
-          <router-link
-            to="/chat"
-            class="nav-link"
-            :class="{ active: $route.path === '/chat' }"
-          >对话</router-link>
-        </li>
-        <li class="nav-item">
-          <router-link
-            to="/rag"
-            class="nav-link"
-            :class="{ active: $route.path === '/rag' }"
-          >RAG 管理</router-link>
-        </li>
-      </ul>
-    </aside>
-
-    <!-- 右侧主内容 -->
-    <main class="flex-grow-1 p-3 overflow-auto bg-light">
+  <div id="app" class="vh-100">
+    <!-- 只保留右侧主内容区域 -->
+    <main class="h-100 p-3 overflow-auto bg-light">
       <router-view />
     </main>
   </div>
@@ -32,11 +12,9 @@
 </script>
 
 <style scoped>
+/* 可选：保留或移除 nav-link 样式，如果不再使用可以删掉 */
 .nav-link.active {
-  background-color: #17a2b8; /* Bootstrap info color */
+  background-color: #17a2b8;
   color: white !important;
 }
 </style>
-
-
-
