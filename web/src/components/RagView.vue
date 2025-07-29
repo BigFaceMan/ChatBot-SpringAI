@@ -1,22 +1,29 @@
-<!--
- * @Author: ssp
- * @Date: 2025-07-29 12:38:40
- * @LastEditTime: 2025-07-29 12:45:15
--->
 <template>
-  <div class="rag-container">
-    <h2>RAG 管理</h2>
+  <div class="container p-4 bg-white rounded shadow-sm" style="max-width: 600px; margin: auto;">
+    <h2 class="mb-4">RAG 管理</h2>
 
-    <div class="upload-section">
-      <input type="file" accept="application/pdf" @change="onFileChange" />
-      <button @click="uploadFile" :disabled="!selectedFile">上传 PDF 到向量库</button>
+    <div class="mb-3 d-flex gap-2 align-items-center">
+      <input
+        type="file"
+        accept="application/pdf"
+        @change="onFileChange"
+        class="form-control"
+      />
+      <button
+        class="btn btn-success"
+        @click="uploadFile"
+        :disabled="!selectedFile"
+      >
+        上传 PDF 到向量库
+      </button>
     </div>
 
-    <div v-if="uploadStatus" class="status">
+    <div v-if="uploadStatus" class="alert alert-info">
       {{ uploadStatus }}
     </div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import { ref } from 'vue'
