@@ -25,8 +25,6 @@ public class UserController {
     @Autowired
     private JwtProperties jwtProperties;
 
-
-
     @PostMapping("/login")
     public Result<String> login(@RequestParam String username, @RequestParam String password) {
         Long uId = userService.login(username, password);

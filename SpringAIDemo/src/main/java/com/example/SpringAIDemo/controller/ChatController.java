@@ -73,22 +73,22 @@ public class ChatController {
     /**
      * 流式输出纯文本
      */
-    @GetMapping(value = "/stream", produces = "text/event-stream;charset=UTF-8")
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> streamQuery(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
         log.info("chat get msg {}", message);
 
         return chatClient
                 .prompt()
                 .user(message)
+                .tools(new DateTimeTools())
                 .stream()
                 .chatResponse()
                 .map(response -> {
                     String text = response.getResult().getOutput().getText();
-                    log.info("Generated text: {}", text);
                     return text != null ? text : "";
                 })
-                .map(text -> ServerSentEvent.builder(text).build()); // 包装为 SSE 格式
-//                .doOnNext(text -> log.info("Generated text: {}", text));
+                .map(text -> ServerSentEvent.builder(text).build()) // 包装为 SSE 格式
+                .doOnNext(text -> log.info("Generated text: {}", text));
     }
 
     @GetMapping("/streamTools")
