@@ -10,6 +10,22 @@ api用的deepseek
 
 小小指挥官功能：对话分析，战场局势，给出智能建议
 
+
+
+## 架构
+
+### 前端
+
+vue3
+
+### 后端
+
+SpirngAI + Mysql + Ollama
+
+- 使用stream流式返回
+- 支持RAG、ToolsCall、会话Mem
+- Mem利用SpringAi自带的库，外加了一个会话表来组织具体会话记录
+
 ## Todo
 
 - [x] 了解ChatClient、ChatModel等基本架构
@@ -24,5 +40,7 @@ api用的deepseek
 
 - [x] Tool Calling
   - [x] 注解来声明Tools的描述，ChatClient发送消息的时候配置.Tools即可
-- [ ] 加入会话memory
+- [x] 加入会话memory
+
+
 
